@@ -40,9 +40,6 @@ def copy_log_to_log(DB1, DB2, r1=0, r2=0):
 	events = c.fetchall()
 
 	for event in events:
-		#ts = event[1].split("-")
-		#print ts
-		#ts = ts[1] + "/" + ts[2] + "/" + ts[0] + " " + event[2][0:5]
 		copyevent = event[4]
 		ds = re.compile('\(%([^)]+)\)').findall(copyevent)
 		#log.add_to_log(copyevent, True, DB2)

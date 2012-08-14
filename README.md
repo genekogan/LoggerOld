@@ -16,7 +16,9 @@ In the future, analytical tools will be developed to query the database and pull
 
 ## Usage
 
-The following script will add an entry to the database.
+The file util.py has a bunch of utilities for managing databases, including one important one for initializing the events table.  That must be run first (util.py -> initialize_log()).  
+
+Once the log exists, the following script will add an entry to the database.
 
 	python /path/to/Logger/log.py "this is the text i want to log"
 	
