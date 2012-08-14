@@ -25,6 +25,11 @@ Once the log exists, the following script will add an entry to the database.
 Optionally, the timestamp can be overridden if say the entry is being made later than the time of the event being logged.
 
 	python log.py "this event will have a different timestamp %(8/14/2012 19:22)"
+	
+Another useful function is the ability to create replacement strings, useful if you want to use a nickname or shorthand for a longer tag. The following example converts all instances of ~john to ~JohnSmith in the database.
+
+	python log.py "/name ~john ~JohnSmith"
+
 
 ## Extending with Alfred
 
@@ -33,3 +38,9 @@ Optionally, the timestamp can be overridden if say the entry is being made later
 	python /path/to/Logger/log.py "{query}"
 
 
+## To-Do
+
+ * search/replace/merge
+ * correct punctuation errors with tags
+ * override geography
+ * reverse geocode
