@@ -25,9 +25,22 @@ def view_log(DB_NAME, r1=0, r2=0):
 	events = c.fetchall()
 	print "\nNOW VIEWING LOG "+DB_NAME+"\n=========================="
 	for event in events:
-		print event
+		print str(event[0]) + " | " + event[1] + " | " + event[4] + " | (" + str(event[2]) + ", " + str(event[3]) + ")"
 	conn.close()
 
+def view_log(DB_NAME, r1=0, r2=0):
+	conn = sqlite3.connect(DB_NAME)
+	c = conn.cursor()
+	if (r2==0):
+		c.execute('SELECT rowid, * FROM events ORDER BY time')
+	else:
+		c.execute('SELECT rowid, * FROM events WHERE rowid BETWEEN '+str(r1)+' AND '+str(r2))
+	events = c.fetchall()
+	print "\nNOW VIEWING LOG "+DB_NAME+"\n=========================="
+	for event in events:
+		print str(event[0]) + " | " + event[1] + " | " + event[4] + " | (" + str(event[2]) + ", " + str(event[3]) + ")"
+	conn.close()
+	
 def view_names_lookup(DB_NAME):
 	conn = sqlite3.connect(DB_NAME)
 	c = conn.cursor()
@@ -87,16 +100,68 @@ def copy_log_to_log(DB1, DB2, r1=0, r2=0):
 			print "NONE: ==> " + copyevent
 	conn.close()
 
+def modify_event_time(DB_NAME, r, newdate):	
+	d0 = re.compile('(\d+)/(\d+)/(\d+)').findall(newdate)
+	date = "%04d-%02d-%02d" % (int(d0[0][2]), int(d0[0][0]), int(d0[0][1]))
+	t0 = re.compile('\d+:\d+').findall(newdate)
+	time = t0[0] + ":00"
+	datestring = "UPDATE events SET time=\"" + date + " " + time + "\" WHERE rowid=" + str(r)
+	conn = sqlite3.connect(DB_NAME)
+	c = conn.cursor()
+	c.execute(datestring)
+	conn.commit()
+	conn.close()
+
+def view_posts_containing(DB_NAME, tag):
+	conn = sqlite3.connect(DB_NAME)
+	c = conn.cursor()
+	c.execute('SELECT rowid, * FROM events ORDER BY time')
+	events = c.fetchall()
+	for event in events:
+		if event[4].find(tag)>-1:
+			print event
+	conn.close()
+
+def relocate_events(DB_NAME, r1, r2):
+	(lat, lng) = log.get_geolocation()
+	conn = sqlite3.connect(DB_NAME)
+	c = conn.cursor()
+	for r in range(r1, r2+1):
+		latstr = "UPDATE events SET latitude=\"" + lat + "\" WHERE rowid=" + str(r)
+		lngstr = "UPDATE events SET longitude=\"" + lng + "\" WHERE rowid=" + str(r)
+		c.execute(latstr)
+		c.execute(lngstr)
+	conn.close()
+
+def replace_string(DB_NAME, s1, s2):
+	conn = sqlite3.connect(DB_NAME)
+	c = conn.cursor()
+	c.execute('SELECT rowid, * FROM events')
+	events = c.fetchall()
+	for event in events:
+		if s1 in event[4]:
+			newevent = re.sub(s1, s2, event[4])
+			logstring = "UPDATE events SET log=\"" + newevent + "\" WHERE rowid=" + str(event[0])
+			c.execute(logstring)
+	conn.commit()
+	conn.close()
 
 
 #initialize_log('db/GeneLog.db')
 #copy_log_to_log('ex1.db', 'db/GeneLog.db', 8, 17)
-#delete_event('db/GeneLog.db',169)
 #for i in range(68, 117):
 	#delete_event('db/GeneLog.db', i)
 #view_log('db/GeneLog.db', 68, 124)
-view_log('db/GeneLog.db')
-#delete_name_lookup('db/GeneLog.db', 3)
-view_names_lookup('db/GeneLog.db')
-view_tags('db/GeneLog.db', '~')
+#view_names_lookup('db/GeneLog.db')
+#view_tags('db/GeneLog.db', '~')
 #copy_log_to_log('db/GeneLog.db', 'db/GeneLog.db', 10, 37)
+#delete_name_lookup('db/GeneLog.db', 178)
+#relocate_events('db/GeneLog.db', 329, 330)
+#modify_event_time('db/GeneLog.db', 486, '8/27/2012 22:15')
+#replace_string('db/GeneLog.db', '~scrapeWikipedia', '#ScrapeWikipedia')
+#delete_event('db/GeneLog.db', 496)
+view_log('db/GeneLog.db')
+#view_statistics('db/GeneLog.db')
+#view_tags('db/GeneLog.db', '#')
+#view_posts_containing('db/GeneLog.db', '~Evan')
+#get_timestamp2('db/GeneLog.db')

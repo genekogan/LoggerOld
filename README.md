@@ -9,6 +9,7 @@ Logger is a mostly personal project to create a quick and simple interface to lo
 	! idea
 	& comment
 	? question
+	^ web link
 
 The logging utility is written in python and the database is maintained using [SQLite](http://www.sqlite.org/).  Alfred is used to make a convenient shortcut for adding entries.
 
@@ -22,7 +23,7 @@ Once the log exists, the following script will add an entry to the database.
 
 	python /path/to/Logger/log.py "this is the text i want to log"
 	
-Optionally, the timestamp can be overridden if say the entry is being made later than the time of the event being logged.
+Optionally, the timestamp can be overridden if say the entry is being made later than the time of the event being logged. Must be in format MM/DD/YYYY HH:MM (or just HH:MM if date stays same) in 24-hour time.
 
 	python log.py "this event will have a different timestamp %(8/14/2012 19:22)"
 	

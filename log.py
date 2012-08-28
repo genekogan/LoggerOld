@@ -6,13 +6,14 @@
 # !() idea
 # &() comment
 # ?() question, musing
+# ^() web link
 #
 # OVERRIDE DATE/TIME
 # %(9/8/2012 8:55)
 # %(20:20)
 #
 # ADD NAME LOOKUP
-# log \name ~tara ~TaraKelton
+# log /name ~tara ~TaraKelton
 
 import sys
 import sqlite3
@@ -36,8 +37,8 @@ def add_to_log(log, commit, db_name):
 			conn.commit()
 			conn.close()
 		else:
-			print logstring
-	
+			print logstring	
+
 	# add entry to log
 	else:
 		# get metadata
@@ -106,7 +107,8 @@ def get_timestamp(log):
 			date = "%04d-%02d-%02d" % (int(d0[0][2]), int(d0[0][0]), int(d0[0][1]))
 		t0 = re.compile('\d+:\d+').findall(dt[0])
 		if t0:
-			time = t0[0] + ":00"
+			t0 = t0[0].split(":")
+			time = "%02d:%02d:00" % (int(t0[0]), int(t0[1]))
 	return "\'"+date+" "+time+"\'"	
 	
 def get_geolocation():
@@ -138,5 +140,5 @@ if __name__ == "__main__":
 		add_to_log(sys.argv[1], True, DB_NAME)
 	else:
 		#add_to_log("log %(8/12/2012 19:20) amusing but disappointing confrontation between  a drunk rickshaw driver and a bunch of cops angrily hitting him in the face for stopping traffic, then finally arresting him while onlookers hissed and laughed at him LAT(12.9744762) LNG(77.5993876)", False, DB_NAME)
-		add_to_log("%(15:00) %(learned something) !(hello world this is a log test)", False, DB_NAME)
+		add_to_log("%(5:00) %(learned something) !(hello world this is a log test)", False, DB_NAME)
 		#add_to_log("/name ~tara ~TaraKelton", False, DB_NAME)
