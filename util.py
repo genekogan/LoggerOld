@@ -131,6 +131,7 @@ def relocate_events(DB_NAME, r1, r2):
 		lngstr = "UPDATE events SET longitude=\"" + lng + "\" WHERE rowid=" + str(r)
 		c.execute(latstr)
 		c.execute(lngstr)
+	conn.commit()
 	conn.close()
 
 def replace_string(DB_NAME, s1, s2):
@@ -152,15 +153,20 @@ def replace_string(DB_NAME, s1, s2):
 #for i in range(68, 117):
 	#delete_event('db/GeneLog.db', i)
 #view_log('db/GeneLog.db', 68, 124)
-#view_names_lookup('db/GeneLog.db')
+view_names_lookup('db/GeneLog.db')
 #view_tags('db/GeneLog.db', '~')
 #copy_log_to_log('db/GeneLog.db', 'db/GeneLog.db', 10, 37)
 #delete_name_lookup('db/GeneLog.db', 178)
-#relocate_events('db/GeneLog.db', 329, 330)
+
+#relocate_events('db/GeneLog.db', 368, 380)
+
 #modify_event_time('db/GeneLog.db', 486, '8/27/2012 22:15')
-#replace_string('db/GeneLog.db', '~scrapeWikipedia', '#ScrapeWikipedia')
-#delete_event('db/GeneLog.db', 496)
+#replace_string('db/GeneLog.db', '~LNI', '~ElonnaiHickok')
+#delete_event('db/GeneLog.db', 590)
 view_log('db/GeneLog.db')
+
+#change 369 sudipto to ~sudipto
+
 #view_statistics('db/GeneLog.db')
 #view_tags('db/GeneLog.db', '#')
 #view_posts_containing('db/GeneLog.db', '~Evan')
