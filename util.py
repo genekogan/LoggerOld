@@ -162,7 +162,7 @@ view_names_lookup('db/GeneLog.db')
 
 #modify_event_time('db/GeneLog.db', 486, '8/27/2012 22:15')
 #replace_string('db/GeneLog.db', '~LNI', '~ElonnaiHickok')
-#delete_event('db/GeneLog.db', 590)
+#delete_event('db/GeneLog.db', 803)
 view_log('db/GeneLog.db')
 
 #change 369 sudipto to ~sudipto

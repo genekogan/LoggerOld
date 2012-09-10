@@ -21,6 +21,7 @@ import datetime
 import re
 import commands
 import urllib2
+import view
 
 DB_NAME = '/Users/Gene/Code/Python/Projects/Logger/db/GeneLog.db'
 
@@ -38,6 +39,10 @@ def add_to_log(log, commit, db_name):
 			conn.close()
 		else:
 			print logstring	
+
+	elif log.find("/view")==0:
+		view.create_html(db_name, log)
+		view.open_html_page()
 
 	# add entry to log
 	else:
@@ -139,6 +144,7 @@ if __name__ == "__main__":
 	if len(sys.argv) > 1:
 		add_to_log(sys.argv[1], True, DB_NAME)
 	else:
+		add_to_log("/view", False, DB_NAME)
 		#add_to_log("log %(8/12/2012 19:20) amusing but disappointing confrontation between  a drunk rickshaw driver and a bunch of cops angrily hitting him in the face for stopping traffic, then finally arresting him while onlookers hissed and laughed at him LAT(12.9744762) LNG(77.5993876)", False, DB_NAME)
-		add_to_log("%(5:00) %(learned something) !(hello world this is a log test)", False, DB_NAME)
+		#add_to_log("%(5:00) %(learned something) !(hello world this is a log test)", False, DB_NAME)
 		#add_to_log("/name ~tara ~TaraKelton", False, DB_NAME)

@@ -32,6 +32,17 @@ Another useful function is the ability to create replacement strings, useful if 
 	python log.py "/name ~john ~JohnSmith"
 
 
+## Viewing
+
+By running the following command:
+	
+	python view.py "/view"
+
+You generate an html page with the last 20 log entries, timestamps, and links to google map, and automatically open it up in your default browser.  This bare-bones viewing utility is under construction.  If you supply another argument, it returns all entries including that argument, e.g.
+
+	python view.py "/view #logger"
+
+
 ## Extending with Alfred
 
 [Alfred](http://www.alfredapp.com/) is an OSX app which is an alternative to Spotlight.  A handy functionality is extensions which lets you add your own keywords for launching scripts from the search bar. By adding the following script to the extensions and assigning it keyword "log", entries can be added quickly via Alfred, e.g. "log add this to my database"
