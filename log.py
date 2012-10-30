@@ -48,11 +48,12 @@ def add_to_log(log, commit, db_name):
 	else:
 		# get metadata
 		time = get_timestamp(log)	
-		(lat, lng) = get_geolocation()
+		(lat, lng) = get_geolocation(log, commit)
 		
 		# format log
 		log = substitute_full_names(log, db_name)
-		log = re.sub("%\([^\)]+[:/][^\)]+\)", "", log)			# get rid of timestamp override
+		log = re.sub("%\([^A-Za-z]+\)", "", log)				# get rid of timestamp override
+		log = re.sub('@\([^A-Za-z]+\)', "", log)				# get rid of geolocation override
 		log = "\'"+log+"\'"										# encase with quote strings
 		logstring = "INSERT INTO events (time,latitude,longitude,log) VALUES ("+time+","+lat+","+lng+","+log+")"
 
@@ -116,22 +117,32 @@ def get_timestamp(log):
 			time = "%02d:%02d:00" % (int(t0[0]), int(t0[1]))
 	return "\'"+date+" "+time+"\'"	
 	
-def get_geolocation():
+def get_geolocation(log, commit):
+	if not commit:
+		return ('NULL', 'NULL')
 	try:
-		response = commands.getstatusoutput('/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -s')
-		lines = response[1].split('\n')
-		geourl = 'https://maps.googleapis.com/maps/api/browserlocation/json?browser=firefox&sensor=true'
-		for i in range(1,len(lines)):
-			macs = re.compile('([^ ].+) ([^ ]+:[^ ]+:[^ ]+:[^ ]+:[^ ]+:[^ ]+) ([^ ]+)').findall(lines[i])
-			name = macs[0][0]
-			mac = macs[0][1]
-			ss = macs[0][2]
-			geourl += '&wifi=mac:%s%%7Cssid:%s%%7Css:%s' % (mac.replace(":", "-"), name.replace(" ", "%20"), ss)
-		# look up google maps API for lat/lng
-		response = urllib2.urlopen(geourl)
-		html = response.read()
-		lat = re.compile('"lat" : (.+),').findall(html)[0]
-		lng = re.compile('"lng" : (.+)').findall(html)[0]
+		# check if geolocation overridden in log string		
+		geo = re.compile('@\(([^A-Za-z)]+)\)').findall(log)
+		if geo:
+			geo = geo[0].split(",")
+			lat = geo[0]
+			lng = geo[1]
+		# if not, then get it from wireless access points
+		else:
+			response = commands.getstatusoutput('/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -s')
+			lines = response[1].split('\n')
+			geourl = 'https://maps.googleapis.com/maps/api/browserlocation/json?browser=firefox&sensor=true'
+			for i in range(1,len(lines)):
+				macs = re.compile('([^ ].+) ([^ ]+:[^ ]+:[^ ]+:[^ ]+:[^ ]+:[^ ]+) ([^ ]+)').findall(lines[i])
+				name = macs[0][0]
+				mac = macs[0][1]
+				ss = macs[0][2]
+				geourl += '&wifi=mac:%s%%7Cssid:%s%%7Css:%s' % (mac.replace(":", "-"), name.replace(" ", "%20"), ss)
+			# look up google maps API for lat/lng
+			response = urllib2.urlopen(geourl)
+			html = response.read()
+			lat = re.compile('"lat" : (.+),').findall(html)[0]
+			lng = re.compile('"lng" : (.+)').findall(html)[0]
 		return (lat, lng)
 	except:
 		print "no internet connection found, no location code!"
@@ -144,7 +155,7 @@ if __name__ == "__main__":
 	if len(sys.argv) > 1:
 		add_to_log(sys.argv[1], True, DB_NAME)
 	else:
-		add_to_log("/view", False, DB_NAME)
+		add_to_log("see ~archana's dog", False, DB_NAME)
 		#add_to_log("log %(8/12/2012 19:20) amusing but disappointing confrontation between  a drunk rickshaw driver and a bunch of cops angrily hitting him in the face for stopping traffic, then finally arresting him while onlookers hissed and laughed at him LAT(12.9744762) LNG(77.5993876)", False, DB_NAME)
 		#add_to_log("%(5:00) %(learned something) !(hello world this is a log test)", False, DB_NAME)
 		#add_to_log("/name ~tara ~TaraKelton", False, DB_NAME)

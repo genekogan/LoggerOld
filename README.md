@@ -1,6 +1,6 @@
 # Logger
 
-Logger is a mostly personal project to create a quick and simple interface to log notes, ideas, commentary, and conversations in an electronic journal to keep an ongoing record of my own personal activities.  Entries are placed into a database along with a timestamp and geolocation (when connected to internet), with various twitter-style reserved characters used to track entities over time.
+[Logger](http://genekogan.com/writing/intro-to-logger.html) is a mostly personal project to create a quick and simple interface to log notes, ideas, commentary, and conversations in an electronic journal to keep an ongoing record of my own personal activities.  Entries are placed into a database along with a timestamp and geolocation (when connected to internet), with various twitter-style reserved characters used to track entities over time. The following conventions apply:
 
 	@ locations
 	~ people
@@ -13,13 +13,14 @@ Logger is a mostly personal project to create a quick and simple interface to lo
 
 The logging utility is written in python and the database is maintained using [SQLite](http://www.sqlite.org/).  Alfred is used to make a convenient shortcut for adding entries.
 
-In the future, analytical tools will be developed to query the database and pull out meaningful statistics and generate summaries.
+Viewing and interacting with the database is done through a browser, entirely through the localhost machine via lightweight local webserver setup by [CherryPy](http://www.cherrypy.org/). In the future, analytical tools will be developed to query the database and pull out meaningful statistics and generate summaries.
+
 
 ## Usage
 
 The file util.py has a bunch of utilities for managing databases, including one important one for initializing the events table.  That must be run first (util.py -> initialize_log()).  
 
-Once the log exists, the following script will add an entry to the database.
+Once the log exists, the DB_NAME variable must be hardcoded into each python script to make sure it has the full path to the table, after which the following script will add an entry to the database.
 
 	python /path/to/Logger/log.py "this is the text i want to log"
 	
@@ -34,13 +35,11 @@ Another useful function is the ability to create replacement strings, useful if 
 
 ## Viewing
 
-By running the following command:
+The data can be interacted with through a browser. First download and install [CherryPy](http://www.cherrypy.org/).  The following command will launch a local server on which you can see your log data.
+
+	python view.py
 	
-	python view.py "/view"
-
-You generate an html page with the last 20 log entries, timestamps, and links to google map, and automatically open it up in your default browser.  This bare-bones viewing utility is under construction.  If you supply another argument, it returns all entries including that argument, e.g.
-
-	python view.py "/view #logger"
+After launching, open a browser and navigate to "http://127.0.0.1:8080/". The basic interface currently supports viewing entries on specific days and by specific keyword searches. In the future this will be extended with data visualization techniques.
 
 
 ## Extending with Alfred
@@ -52,7 +51,6 @@ You generate an html page with the last 20 log entries, timestamps, and links to
 
 ## To-Do
 
- * search/replace/merge
- * correct punctuation errors with tags
  * override geography
  * reverse geocode
+ * js graph tools
