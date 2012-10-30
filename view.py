@@ -121,8 +121,8 @@ def html_log(events):
 		<table width="95%" border=0 cellpadding=4>
 			<tr>
 				<td width="10%"><h1>Time</h1></td>
-				<td width="85%"><h1>Log ('''+str(len(events))+''')</h1></td>
-				<td width="5%"></td>
+				<td width="82%"><h1>Log ('''+str(len(events))+''')</h1></td>
+				<td width="8%"></td>
 			</tr>
 		'''
 
@@ -131,8 +131,11 @@ def html_log(events):
 		else: col = "FFFFFF"
 
 		timestamp = format_time(event[1])			
-		map_link = '<a href="https://maps.google.com/maps?q='+str(event[2])+','+str(event[3])+'">[m]</a>'		
 		log_string = event[4]
+		actions = '''
+			<a href="https://maps.google.com/maps?q='''+str(event[2])+''','''+str(event[3])+'''">[m]</a>
+			<a href="/edit/?id='''+str(event[0])+'''">[e]</a>
+			'''		
 		
 		links = re.compile('[~!@#][^ \.?,!\(\)]+').findall(log_string)
 		for link in links:
@@ -142,16 +145,14 @@ def html_log(events):
 			<tr bgcolor="'''+col+'''">
 				<td>'''+ timestamp +'''</td>
 				<td>'''+ log_string +'''</td>
-				<td>'''+ map_link +'''</td>
+				<td>'''+ actions +'''</td>
 			</tr>
 			'''
 	html += '</table>'
 	return html
 	
 
-	
-	
-def make_page(keyword, date1, date2):
+def make_page(content):
 	html = '''
 		<html>
 			<head>
@@ -199,32 +200,27 @@ def make_page(keyword, date1, date2):
 			</head>
 			<body>
 		'''
-	
-	log = get_log(keyword, date1, date2) 
-	
-	
-	html += '<div class="left">'
-	
-	html += html_log(log)
-	
-	
-	#html += html_names_lookup()	
-
-	html += '</div>'
-	html += '<div class="right">'
-	
-	html += html_calendar()
-	html += '</div>'
-
+	html += content
 	html += '''
 			</body>
 			</html>
 		'''
 	return html
-
-
-
-
+	
+def html_log_page(keyword, date1, date2):
+	log = get_log(keyword, date1, date2) 
+	html = '<div class="left">'
+	html += html_log(log)
+	html += '</div>'
+	html += '<div class="right">'
+	html += '''
+	<iframe width="425" height="350" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" 
+	src="https://maps.google.com/maps?q=12.9753404,77.6414037&amp;ie=UTF8&amp;t=m&amp;z=14&amp;ll=12.97534,77.641404&amp;output=embed"></iframe><br />
+	<p/>
+	'''
+	html += html_calendar()
+	html += '</div>'
+	return html
 
 def view_tags(DB_NAME, char):
 	tagset = []
@@ -248,23 +244,27 @@ def delete_event(r):
 	c.execute('DELETE FROM events WHERE rowid='+str(r))
 	conn.commit()
 	conn.close()
+	
+def modify_event(id,time,lat,lng,log):
+	query = '''UPDATE events SET
+		time="'''+str(time)+'''",
+		latitude='''+str(lat)+''',
+		longitude='''+str(lng)+''',
+		log="'''+str(log)+'''"
+		WHERE rowid='''+str(id)			
+	conn = sqlite3.connect(DB_NAME)
+	c = conn.cursor()
+	c.execute(query)
+	conn.commit()
+	conn.close()
+
 def delete_name_lookup(r):
 	conn = sqlite3.connect(DB_NAME)
 	c = conn.cursor()
 	c.execute('DELETE FROM names_lookup WHERE rowid='+str(r))
 	conn.commit()
 	conn.close()		
-def modify_event_time(r, newdate):	
-	d0 = re.compile('(\d+)/(\d+)/(\d+)').findall(newdate)
-	date = "%04d-%02d-%02d" % (int(d0[0][2]), int(d0[0][0]), int(d0[0][1]))
-	t0 = re.compile('\d+:\d+').findall(newdate)
-	time = t0[0] + ":00"
-	datestring = "UPDATE events SET time=\"" + date + " " + time + "\" WHERE rowid=" + str(r)
-	conn = sqlite3.connect(DB_NAME)
-	c = conn.cursor()
-	c.execute(datestring)
-	conn.commit()
-	conn.close()
+
 def replace_string(DB_NAME, s1, s2):
 	conn = sqlite3.connect(DB_NAME)
 	c = conn.cursor()
@@ -280,11 +280,85 @@ def replace_string(DB_NAME, s1, s2):
 
 class LogPage:
     def index(self, keyword = None, date1 = None, date2 = None):
-		return make_page(keyword, date1, date2)
+		html = html_log_page(keyword, date1, date2)
+		html = make_page(html)
+		return html
     index.exposed = True
+
+class EditPage:
+    def index(self, id = None, time = None, lat = None, lng = None, log = None, action = None):
+		conn = sqlite3.connect(DB_NAME)
+		c = conn.cursor()
+		c.execute('SELECT rowid, * FROM events WHERE rowid='+str(id))
+		entry = c.fetchall()
+		conn.close()
+
+		rowid0 = entry[0][0]
+		time0 = entry[0][1]
+		lat0 = entry[0][2]
+		lng0 = entry[0][3]
+		log0 = entry[0][4]
+		
+		html = '<div class="left"><h1>'
+		
+		if action is None:
+			html += '''Edit entry #'''+str(rowid0)+'''<p/>
+				<form name="editor" action="" method="get">
+					<input type="hidden" name="id" value="'''+str(rowid0)+'''">
+					<input type="hidden" name="action" value="modify">
+					Time: <input type="text" name="time" value="'''+str(time0)+'''">
+					<p/>
+					Latitude: <input type="text" name="lat" value="'''+str(lat0)+'''">
+					Longitude: <input type="text" name="lng" value="'''+str(lng0)+'''">
+					<p/>
+					<textarea name="log" cols="70" rows="10">'''+str(log0)+'''</textarea>
+					<p/>
+					<input type="submit" value="Edit">
+				</form>
+				<p/>
+				<a href="?action=delete&id='''+str(rowid0)+'''">Delete</a>
+				'''
+				
+		elif str(action) == "modify":
+			html += '''<b>Original:</b>
+				<br/>Id: '''+str(rowid0)+'''
+				<br/>Time: '''+str(time0)+'''
+				<br/>Latitude: '''+str(lat0)+'''
+				<br/>Longitude: '''+str(lng0)+'''
+				<br/>Log: '''+str(log0)+'''
+				<p/>
+				<b>New</b>:
+				<br/>Id: '''+str(id)+'''
+				<br/>Time: '''+str(time)+'''
+				<br/>Latitude: '''+str(lat)+'''
+				<br/>Longitude: '''+str(lng)+'''
+				<br/>Log: '''+str(log)+'''
+				<p/>
+				<a href="/">[back]</a>
+				'''
+			modify_event(id,time,lat,lng,log)
+		
+		elif str(action) == "delete":
+			html += '''<b>Deleted:</b>
+				<br/>Id: '''+str(rowid0)+'''
+				<br/>Time: '''+str(time0)+'''
+				<br/>Latitude: '''+str(lat0)+'''
+				<br/>Longitude: '''+str(lng0)+'''
+				<br/>Log: '''+str(log0)+'''
+				<p/>
+				<a href="/">[back]</a>
+				'''
+			delete_event(rowid0)
+		
+		html += '<h1></div>'
+		html = make_page(html)
+		return html
+    index.exposed = True
+	
 
 # CherryPy startup
 root = LogPage()
+root.edit = EditPage()
 lconfig = os.path.join(os.path.dirname(__file__), 'lconfig.conf')
 if __name__ == '__main__':
     cherrypy.quickstart(root, config=lconfig)
