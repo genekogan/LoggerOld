@@ -1,0 +1,88 @@
+body,html {
+	background-color: #364154;
+    font-family: "Georgia", "Verdana";
+	font-weight: normal;
+	border: 0px;
+	margin: 0px;
+	padding: 0px;
+}	
+#navbar {
+	background-color:#DDDDEE;
+	border:1px solid #5599DD;
+	width:320px;
+	margin-right:20px;
+	margin-bottom:12px;
+	padding:0px;
+	height:24px;
+	font-size:14px;
+	position:absolute;
+	top:0px;
+}				
+#navbar ul {
+	margin:4px;
+}
+#navbar li {
+	display: inline;
+	padding-right: 8px;
+}
+#fsmap { 
+	position:absolute; 
+	top:0; 
+	bottom:0; 
+	width:100%; 
+}
+h1 {
+	font-size: 16px;
+	color: #fff;
+}
+h2 {
+	font-size: 16px;
+}
+#left, #right, .analysis {
+  	float: left;
+  	margin: 0px;
+	padding: 6px 6px;
+	margin-top: 22px;
+	margin-bottom: 40px;
+}
+#left {
+	width: 60%;
+}
+#right {
+	width: 35%;
+}
+.analysis {
+	background-color: #DDDDEE;
+}
+a, a:visited {
+	color: #bb22bb;
+	text-decoration: none;
+}
+a:hover {
+	color: #d3832d;
+    text-decoration: underline;
+}
+#map { 
+	width:100%; 
+	height:440px;
+	margin:5px;
+	border:1px solid #999;
+}
+
+#editlog, #editcalendar {
+	margin:24px;
+}
+
+#modifylog {
+	position:fixed;
+	top:50%;
+	left:50%;
+	width:500px;
+	height:400px;
+	margin-left:-250px;
+	margin-top:-300px;
+	background-color:#222;
+    border:2px solid #DDD;
+	color:#EEE;
+	padding-bottom:28px;
+}
