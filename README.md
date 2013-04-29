@@ -31,7 +31,7 @@ Optionally, the timestamp can be overridden if say the entry is being made later
 
 If you have an internet connection, it will automatically log the gps coordinates with the post. You can also override the location stamp with a link to a lookup in a locations table. To add locations to the table, use the following example.
 
-	python log.py location "StatueOfLiberty
+	python log.py location "StatueOfLiberty" 40.689249 -74.0445
 
 You can then override the location in a log post using the following notation,
 
