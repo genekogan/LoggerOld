@@ -43,22 +43,22 @@ class LogPage:
 			if len(logview.get_log(None, date1, None, None, limit))==0:
 				date1 = str(datetime.date.today() - datetime.timedelta(1))
 		log = logview.get_log(keyword, date1, date2, location, limit) 
+		media = logview.get_media(date1, date2)
 		html = '<div id="left">'
 		html += logview.html_log(log)
 		html += '</div>'
 		html += '<div id="right">'
 		html += mapbox.html_get_map(log)
+		html += logview.html_media(media)
 		html += logview.html_calendar()
 		html += '</div>'
-		html = make_page(html, ['mapbox'], ['mapbox'], True)
+		html = make_page(html, ['mapbox', 'lightbox'], ['mapbox', 'jquery-1.7.2.min', 'lightbox'], True)
 		return html
     index.exposed = True
 
 class EditPage:
-    def index(self, id = None, time = None, lat = None, lng = None, log = None, action = None):
-		entry = util.query_db('SELECT rowid, * FROM events WHERE rowid='+str(id))
-		(rowid0, cat0, time0, lat0, lng0, log0) = entry[0]
-		html = logview.html_edit(rowid0, cat0, time0, lat0, lng0, log0, action)
+    def index(self, id = None, time = None, lat = None, lng = None, log0 = None, action = None):
+		html = logview.html_edit(id, time, lat, lng, log0, action)
 		html = make_page(html, None, None, False)
 		return html
     index.exposed = True
@@ -105,10 +105,24 @@ class StatsPage:
 		return html
     index.exposed = True
 
+class D3TestPage:			# experimental
+    def index(self):
+		html = stats.d3_test()
+		html = make_page(html, None, ['d3.v3'], True)
+		return html
+    index.exposed = True
+
 class TodoPage:
-    def index(self, toggle = None, prioritize = None, delete = None, description = None, idx = None, list_idx = None, parent_idx = None ):
-		html = todo.html_get_todo(toggle, prioritize, delete, description, idx, list_idx, parent_idx)
-		html = make_page(html, ['todo'], ['jquery.min', 'todo'], True)
+    def index(self, toggle = None, prioritize = None, delete = None, description = None, idx = None, list_idx = None, parent_idx = None, switch_idx = None, switch_parent = None, switch_list = None, close = None):
+		html = todo.html_get_todo(toggle, prioritize, delete, description, idx, list_idx, parent_idx, switch_idx, switch_parent, switch_list, close)
+		html = make_page(html, ['todo'], [ 'jquery.min', 'jquery.autosize-min', 'todo'], True)
+		return html
+    index.exposed = True
+
+class TodoEditParentPage:
+    def index(self, idx_switch):
+		html = todo.html_modify_task_parent(idx_switch)
+		html = make_page(html, ['todo'], None, True)
 		return html
     index.exposed = True
 
@@ -134,8 +148,10 @@ root.editname = EditNamePage()
 root.editlocation = EditLocationPage()
 root.massedit = MassEditPage()
 root.stats = StatsPage()
+root.d3 = D3TestPage()
 root.map = MapPage()
 root.todo = TodoPage()
+root.todo_edit = TodoEditParentPage()
 root.calendar = CalendarPage()
 root.editcalendar = EditCalendarPage()
 lconfig = os.path.join(os.path.dirname(__file__), 'lconfig.conf')

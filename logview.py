@@ -38,25 +38,34 @@ def get_log(keyword, date1, date2, location, limit):
 	log0 = util.query_db(query)
 	return log0
 
-
+def get_media(date1, date2):
+	where = []
+	if date1 is not None:
+		if date2 is None:
+			d1 = date1.split("-")
+			date2 = datetime.date(int(d1[0]), int(d1[1]), int(d1[2])) 
+			date2 += datetime.timedelta(1)
+		time1 = str(date1) + ' 05:00'
+		time2 = str(date2) + ' 05:00'
+		where.append('time > "'+time1+'"')
+		where.append('time < "'+time2+'"')
+	query = 'SELECT * FROM media '
+	if len(where):	query += "WHERE " + " AND ".join(where) + " ORDER BY time"
+	media = util.query_db(query)
+	return media
+	
 def html_log(events):
-	html = '''
-	<div id='events'>
+	html = '''<div id='events'>
 		<table width="95%" border=0 cellpadding=4>
 			<tr>
 				<td width="10%"><h1>Time</h1></td>
 				<td width="82%"><h1>Log ('''+str(len(events))+''')</h1></td>
 				<td width="8%"></td>
-			</tr>
-		'''
+			</tr>'''
 	for (idx, event) in enumerate(events):
-		(rid, category, time, lat, lng, log_string) = event
-
-		#if idx%2==0:	col = "DDDDEE"
-		#else: 			col = "FFFFFF"
+		(rid, category, time0, lat, lng, log_string) = event
 		col = "DDDDEE" if idx%2==0 else "FFFFFF"
-
-		timestamp = util.format_time(time)			
+		timestamp = util.format_time(time0)			
 		if lat is None:
 			actions = '<a href="/edit/?id='+str(rid)+'">[e]</a>'		
 		else:
@@ -80,9 +89,10 @@ def html_log(events):
 
 	html += '</table>'
 	html += '</div>'
+
+	# modify log viewbox
 	html += '<div id="modifylog" style="display:none; z-index:1;"></div>'
-	html += '''
-	<script>
+	html += '''<script>
 	function HideModifyLog() {
 		document.getElementById('modifylog').style.display = 'none';
 	}	
@@ -90,26 +100,35 @@ def html_log(events):
 		document.getElementById('modifylog').style.display = 'block';
 		document.getElementById('modifylog').innerHTML = '<iframe src="/edit/?id='+idx+'" width="100%" height="100%"></iframe><br/><a href="javascript:HideModifyLog();">&nbsp;&nbsp;[close]</a>';
 	}	
-	</script>
-	'''
+	</script>'''
 	return html
 
 
+def html_media(media):
+	html ='''<div id='media'>'''
+	if len(media) > 0:
+		skip_thumb = max(1, int(len(media)/4.0))
+		for (r, (idx, typ, path, time)) in enumerate(media):
+			if  r % skip_thumb == 0:
+				html += '<a href="'+path+'" rel="lightbox[logimages]"><img src="'+path+'" width=160 /></a>'
+			else:
+				html += '<a href="'+path+'" rel="lightbox[logimages]"></a>'
+	html += '</div>'
+	return html
+	
 def html_calendar():
-	html =  '''
-		<div id='calendar'>
-			<table width=280 border=2 cellspacing=0>
-			<tr>
-				<td width=40><h1>M</h1></td>
-				<td width=40><h1>T</h1></td>
-				<td width=40><h1>W</h1></td>
-				<td width=40><h1>R</h1></td>
-				<td width=40><h1>F</h1></td>
-				<td width=40><h1>Sa</h1></td>
-				<td width=40><h1>Su</h1></td>
-			</tr>
-			<tr>
-		'''
+	html =  '''<div id='calendar'>
+		<table width=280 border=2 cellspacing=0>
+		<tr>
+			<td width=40><h1>M</h1></td>
+			<td width=40><h1>T</h1></td>
+			<td width=40><h1>W</h1></td>
+			<td width=40><h1>R</h1></td>
+			<td width=40><h1>F</h1></td>
+			<td width=40><h1>Sa</h1></td>
+			<td width=40><h1>Su</h1></td>
+		</tr>
+		<tr>'''
 	date1 = datetime.date(2012, 8, 6)	# the beginning of time
 	date2 = datetime.date.today()	
 	day_count = (date2 - date1).days + 1
@@ -130,55 +149,46 @@ def html_calendar():
 ##  Edit logger entry
 ##########################
 
-def html_edit(rowid, cat, time, lat, lng, log0, action):
+def html_edit(id, time0, lat, lng, log0, action):
 	html = '<div id="editlog"><h1>'
 	# edit an entry
 	if action is None:
-		html += '''Edit entry #'''+str(rowid)+'''<p/>
+		(time0, lat, lng, log0) = util.query_db('SELECT time, latitude, longitude, log FROM events WHERE rowid='+str(id))[0]
+		html += '''Edit entry #'''+str(id)+'''<p/>
 			<form name="editor" action="" method="get">
-				<input type="hidden" name="id" value="'''+str(rowid)+'''">
+				<input type="hidden" name="id" value="'''+str(id)+'''">
 				<input type="hidden" name="action" value="modify">
-				Time: <input type="text" name="time" value="'''+str(time)+'''">
+				Time: <input type="text" name="time" value="'''+time0+'''">
 				<p/>
 				Latitude: <input type="text" name="lat" value="'''+str(lat)+'''">
 				Longitude: <input type="text" name="lng" value="'''+str(lng)+'''">
 				<p/>
-				<textarea name="log" cols="60" rows="10">'''+str(log0)+'''</textarea>
+				<textarea name="log0" cols="60" rows="10">'''+str(log0)+'''</textarea>
 				<p/>
 				<input type="submit" value="Edit">
 			</form>
-			<p/>
-			<a href="?action=delete&id='''+str(rowid)+'''">Delete</a>'''
+			<p/><a href="?action=delete&id='''+str(id)+'''">Delete</a>'''
 	# entry modified
 	elif str(action) == "modify":
-		html += '''<b>Original:</b>
-			<br/>Id: '''+str(rowid)+'''
-			<br/>Time: '''+str(time)+'''
-			<br/>Latitude: '''+str(lat)+'''
-			<br/>Longitude: '''+str(lng)+'''
-			<br/>Log: '''+str(log0)+'''
-			<p/>
-			<b>New</b>:
+		html += '''<b>Modified</b>:
 			<br/>Id: '''+str(id)+'''
-			<br/>Time: '''+str(time)+'''
+			<br/>Time: '''+str(time0)+'''
 			<br/>Latitude: '''+str(lat)+'''
 			<br/>Longitude: '''+str(lng)+'''
 			<br/>Log: '''+str(log0)+'''
-			<p/>
-			<a href="/">[back]</a>'''
-		log.modify_event(rowid,time,lat,lng,log0)
+			<p/><a href="/">[back]</a>'''
+		log.modify_event(id, time0, lat, lng, log0)
 	# entry deleted
 	elif str(action) == "delete":
+		(time0, lat, lng, log0) = util.query_db('SELECT time, latitude, longitude, log FROM events WHERE rowid='+str(id))[0]
 		html += '''<b>Deleted:</b>
-			<br/>Id: '''+str(rowid)+'''
-			<br/>Time: '''+str(time)+'''
+			<br/>Id: '''+str(id)+'''
+			<br/>Time: '''+str(time0)+'''
 			<br/>Latitude: '''+str(lat)+'''
 			<br/>Longitude: '''+str(lng)+'''
 			<br/>Log: '''+str(log0)+'''
-			<p/>
-			<a href="/">[back]</a>'''
-		log.delete_event(rowid)
-
+			<p/><a href="/">[back]</a>'''
+		log.delete_event(id)
 	html += '</h1></div>'
 	return html
 
@@ -192,7 +202,7 @@ def html_edit_name(id, name, alias, action):
 				<input type="hidden" name="id" value="'''+str(id)+'''">
 				<input type="hidden" name="action" value="modify">
 				Name: <input type="text" name="name" value="'''+name+'''">
-				Latitude: <input type="text" name="alias" value="'''+alias+'''">
+				Alias: <input type="text" name="alias" value="'''+alias+'''">
 				<p/><input type="submit" value="Edit">
 			</form>
 			<p/><a href="?action=delete&id='''+str(id)+'''">Delete</a>'''
@@ -274,17 +284,19 @@ def html_mass_edit(backlog_text = None, action = None):
 		backlog_lines = backlog_text.split('\n')
 		for l in backlog_lines:
 			logstring = re.compile('^log ').split(l)[-1]
-			(logstring, time, gps, category) = log.process_log_string(logstring, 'log')
+			(logstring, time0, gps, category) = log.process_log_string(logstring, 'log', False)
+			print gps
 			if gps[0] is None:	location = '<font color="#FF0000">none</font>'
 			else:				location = '%0.3f, %0.3f' % gps
-			html += '<tr><td>'+category+'</td><td>'+logstring+'</td><td>'+time+'</td><td>'+location+'</td></tr>'
+			html += '<tr><td>'+category+'</td><td>'+logstring+'</td><td>'+time0+'</td><td>'+location+'</td></tr>'
 			if action=='addtolog':	
-				log.add_log(logstring, time, gps, category)
+				log.add_log(logstring, time0, gps, category)
 		html += '</table><p>'
 	if action != 'addtolog':
-		html += '''<p>
-		<div id="massedit">
-		<form name="editor" action="" method="post">
+		last_log = util.query_db('SELECT rowid, time, log FROM events ORDER BY time DESC LIMIT 1')
+		html += '<p><div id="massedit">'
+		for l in last_log:	html += '<br>&nbsp;&nbsp;&nbsp;'+str(l[0])+' ('+l[1][:-3]+')  ::  '+l[2]
+		html += '''<form name="editor" action="" method="post">
 		<textarea id="backlog" name="backlog" cols=110 rows=30 maxlength=2500>'''
 		if backlog_text is not None:
 			html += backlog_text
@@ -294,7 +306,8 @@ def html_mass_edit(backlog_text = None, action = None):
 			<option value="addtolog">add to log</option>
 		</select>
 		<input type="submit" value="Submit">&nbsp;&nbsp;&nbsp;&nbsp;
-		<input type="button" value="Save Cookie!" id="save">
+		<input type="button" value="Save" id="save">
+		<a href="javascript:removeLimit();">[remove limit]</a>
 		</form>
 		</div>
 		'''

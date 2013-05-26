@@ -2,10 +2,10 @@
 # -*- coding: utf8 -*- 
 
 import sqlite3
+import os.path
 import datetime
 import re
 import log
-import os.path
 
 # name of your database
 DB_PATH = os.path.join(os.path.dirname(__file__), 'data/gulag.db')
@@ -25,6 +25,7 @@ def initialize_log():
 	create_log()
 	create_todo()
 	create_calendar()
+	create_media()
 	
 # be careful using these! uncomment if you intend to erase the databases
 def create_log():
@@ -48,9 +49,24 @@ def create_todo():
 
 def create_calendar():
 	print "creating calendar"
-	query_db('DROP TABLE calendar')
-	query_db('CREATE TABLE calendar (id INTEGER PRIMARY KEY, name TEXT, description TEXT, start DATETIME, end DATETIME, created DATETIME)')
+	#query_db('DROP TABLE calendar')
+	#query_db('CREATE TABLE calendar (id INTEGER PRIMARY KEY, name TEXT, description TEXT, start DATETIME, end DATETIME, created DATETIME)')
 
+def create_media():
+	print "creating database of images and sounds"
+	query_db('DROP TABLE media')
+	query_db('CREATE TABLE media (id INTEGER PRIMARY KEY, type TEXT, filepath TEXT, time DATETIME)')
+	
+def update_media():
+	for root, dirs, files in os.walk('/Users/Gene/Pictures/'):
+	    for name in files:
+	        if name.lower().endswith((".png", ".jpg", ".jpeg")):
+				actual_path = root + '/' + name
+				local_path = 'images/' + root[21:] + '/' + name
+				file_time = datetime.datetime.fromtimestamp(os.path.getmtime(actual_path))
+				query = 'INSERT INTO media (type, filepath, time) VALUES ("image", "'+local_path+'", "'+str(file_time)+'")'
+				query_db(query)
+				
 def format_time(ts):
 	months = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ]
 	ts = ts.split(" ")
@@ -58,3 +74,6 @@ def format_time(ts):
 	tm = ts[1].split(":")
 	timestring = "%s %s %s:%s" % (months[int(dt[1])-1], dt[2], tm[0], tm[1])
 	return timestring
+	
+#create_media()
+#update_media()

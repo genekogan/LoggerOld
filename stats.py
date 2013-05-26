@@ -144,3 +144,123 @@ def html_daily_stats():
 		html += '<br/>'+str(d)+' : '+str(len(log))+'\n'	
 	html += '<p/>'
 	return html
+	
+def d3_test():
+	html = '''
+	
+	<script src='http://d3js.org/d3.v2.js'></script>
+
+	<style type='text/css'>
+
+	.chart {
+	  margin-left: 42px;
+	  font: 10px sans-serif;
+	  shape-rendering: crispEdges;
+	}
+
+	.chart div {
+	  background-color: steelblue;
+	  text-align: right;
+	  padding: 3px;
+	  margin: 1px;
+	  color: white;
+	}
+
+	.chart rect {
+	  stroke: white;
+	  fill: steelblue;
+	}
+
+	.chart text.bar {
+	  fill: white;
+	}
+
+	</style>
+	
+	<script type='text/javascript'>
+	var data = [4, 8, 15, 16, 23, 42];
+	</script>
+	
+	<script type='text/javascript'>
+	var y = d3.scale.ordinal()
+	    .domain(data)
+	    .rangeBands([0, 120]);
+	</script>
+	
+	<script type='text/javascript'>
+	d3.select(".content").append("div")
+	    .attr("class", "chart")
+	  .selectAll("div")
+	    .data(data)
+	  .enter().append("div")
+	    .style("width", function(d) { return d * 10 + "px"; })
+	    .text(function(d) { return d; });
+	</script>
+	
+	<script type='text/javascript'>
+	var x = d3.scale.linear()
+	    .domain([0, d3.max(data)])
+	    .range(["0px", "420px"]);
+	</script>
+	
+	
+	
+	<script type='text/javascript'>
+	var chart = d3.select(".content").append("svg")
+	    .attr("class", "chart")
+	    .attr("width", 440)
+	    .attr("height", 140)
+	    .style("margin-left", "32px") // Tweak alignment…
+	  .append("g")
+	    .attr("transform", "translate(10,15)");
+
+	chart.selectAll("line")
+	    .data(x.ticks(10))
+	  .enter().append("line")
+	    .attr("x1", x)
+	    .attr("x2", x)
+	    .attr("y1", 0)
+	    .attr("y2", 120)
+	    .style("stroke", "#ccc");
+
+	chart.selectAll(".rule")
+	    .data(x.ticks(10))
+	  .enter().append("text")
+	    .attr("class", "rule")
+	    .attr("x", x)
+	    .attr("y", 0)
+	    .attr("dy", -3)
+	    .attr("text-anchor", "middle")
+	    .text(String);
+
+	chart.selectAll("rect")
+	    .data(data)
+	  .enter().append("rect")
+	    .attr("y", y)
+	    .attr("width", x)
+	    .attr("height", y.rangeBand());
+
+	chart.selectAll(".bar")
+	    .data(data)
+	  .enter().append("text")
+	    .attr("class", "bar")
+	    .attr("x", x)
+	    .attr("y", function(d) { return y(d) + y.rangeBand() / 2; })
+	    .attr("dx", -3)
+	    .attr("dy", ".35em")
+	    .attr("text-anchor", "end")
+	    .text(String);
+
+	chart.append("line")
+	    .attr("y1", 0)
+	    .attr("y2", 120)
+	    .style("stroke", "#000");
+	</script>
+
+
+
+
+
+	
+	'''
+	return html

@@ -23,16 +23,17 @@ def alfred_query(log, category):
 		(log, time, gps, category) = process_log_string(log, category)
 		add_log(log, time, gps, category)
 
-def process_log_string(log, category):
-	time = get_time_manual(log)							# get timestamp
-	if time is None:	time = get_time_system()
-	gps = get_geolocation_manual(log)					# get geolocation
-	if gps[0] is None:	gps = get_geolocation_system()
+def process_log_string(log, category, allow_manual=True):
+	time = get_time_manual(log)							# get timestamp from logstring
+	if time is None and allow_manual is True:	
+		time = get_time_system()
+	gps = get_geolocation_manual(log)					# get geolocation frin kigstrubg
+	if gps[0] is None and allow_manual is True:	
+		gps = get_geolocation_system()
 	log = substitute_aliases(log)						# substitue aliases
 	log = re.sub("%\([^A-Za-z]+\)", "", log)			# get rid of timestamp override
 	log = re.sub('@\(.+\)', "", log)					# get rid of geolocation override
 	return (log, time, gps, category)
-
 
 def process_calendar_string(log):
 	log = log.split('"')
@@ -142,23 +143,32 @@ def add_todo(description, list_id, parent_id):
 	query = '''INSERT INTO todo (description, list_id, parent_id, priority, status, created) VALUES ("'''+description+'''", '''+str(list_id)+''', '''+str(parent_id)+''', '''+str(priority)+''', 0, "'''+sys_time+'''")'''
 	util.query_db(query)
 
-def delete_todo(delete):
-	query = 'DELETE FROM todo WHERE id='+str(delete)
-	util.query_db(query)
-
 def edit_todo(idx, description):
 	query = 'UPDATE todo SET description="'+description+'" WHERE id='+str(idx)
 	util.query_db(query)
+	
+def edit_todo_parent(idx, switch_idx, list_idx):
+	query = 'UPDATE todo SET parent_id="'+switch_idx+'" WHERE id='+str(idx)
+	util.query_db(query)
+	query = 'UPDATE todo SET list_id="'+list_idx+'" WHERE id='+str(idx)
+	util.query_db(query)
 
 def delete_todo(idx):
-	children = util.query_db('SELECT * FROM todo WHERE parent_id='+str(idx))		# delete children
-	for child in children:	delete_todo(child[0])
+	if idx=="completed":
+		completed = util.query_db('SELECT * FROM todo WHERE status=1')
+		for c in completed:	delete_todo_idx(c[0])
+	else:
+		children = util.query_db('SELECT * FROM todo WHERE parent_id='+str(idx))		# delete children
+		for child in children:	delete_todo(child[0])
+		delete_todo_idx(idx)
+
+def delete_todo_idx(idx):
 	(idx, description, list_id, parent_id, priority, status, created, completed) = util.query_db('SELECT * FROM todo WHERE id='+str(idx))[0]			# move self to archive
 	if completed is None:	completed = "NULL"
 	deleted = get_time_system()
 	util.query_db('INSERT INTO todo_archive (id, description, list_id, parent_id, priority, created, completed, archived) VALUES ('+str(idx)+', "'+description+'", '+str(list_id)+', '+str(parent_id)+', '+str(priority)+', "'+created+'", "'+completed+'", "'+deleted+'")')	
 	util.query_db('DELETE FROM todo WHERE id='+str(idx))	
-
+	
 def toggle_todo(idx, new_status = None):
 	if new_status is None:
 		status = util.query_db('SELECT status FROM todo WHERE id='+str(idx))[0][0]
@@ -187,6 +197,8 @@ def prioritize_todo(idx):
 
 def add_calendar(name, description, datenew, start, end, rm, rt, rw, rr, rf, rs, rsu, until):
 	sys_time = get_time_system()
+	name = substitute_aliases(name)
+	description = substitute_aliases(description)
 	query = "INSERT INTO calendar (name, description, start, end, created) VALUES ('"+name+"','"+description+"','"+datenew+" "+start+"', '"+datenew+" "+end+"', '"+sys_time+"')"
 	util.query_db(query)
 	if len(until) > 0:			# if there is repetition selected
@@ -194,7 +206,6 @@ def add_calendar(name, description, datenew, start, end, rm, rt, rw, rr, rf, rs,
 		date1 = datetime.datetime(int(str(datenew)[0:4]), int(str(datenew)[5:7]), int(str(datenew)[8:10]))
 		date2 = datetime.datetime(int(str(until)[0:4]), int(str(until)[5:7]), int(str(until)[8:10]))		
 		day_count = (date2 - date1).days + 1
-		print str(day_count) +' days count'
 		for d in [d for d in (date1 + datetime.timedelta(n) for n in range(1,day_count)) if d <= date2]:
 			if d.weekday() in repeat_days:
 				start2 = str(d)[0:10] + ' ' + start
@@ -219,19 +230,15 @@ def get_time_manual(log):
 	dt = re.compile('%\((.+)\)').findall(log)
 	if dt:
 		d0 = re.compile('(\d+)/(\d+)/(\d+)').findall(dt[0])
-		if d0:	
-			date = "%04d-%02d-%02d" % (int(d0[0][2]), int(d0[0][0]), int(d0[0][1]))
-		else:	
-			date = str(datetime.datetime.now())[0:10]
+		if d0:	date = "%04d-%02d-%02d" % (int(d0[0][2]), int(d0[0][0]), int(d0[0][1]))
+		else:	date = str(datetime.datetime.now())[0:10]
 		t0 = re.compile('\d+:\d+').findall(dt[0])
 		if t0:
 			t0 = t0[0].split(":")
 			time = "%02d:%02d:00" % (int(t0[0]), int(t0[1]))
-		else:
-			time = str(datetime.datetime.now())[11:16]
+		else:	time = str(datetime.datetime.now())[11:16]
 		timestamp = date + " " + time
-	else:
-		timestamp = None
+	else:	timestamp = None
 	return timestamp
 
 def get_time_system():
@@ -250,10 +257,8 @@ def get_geolocation_manual(log):
 		else:
 			query = 'SELECT * FROM locations WHERE name="'+geo[0]+'"'
 			loc = util.query_db(query)
-			if loc:
-				(lat, lng) = (loc[0][1], loc[0][2])
-			else:
-				(lat, lng) = (None, None)
+			if loc:	(lat, lng) = (loc[0][1], loc[0][2])
+			else:	(lat, lng) = (None, None)
 	return (lat, lng)
 
 def get_geolocation_system():
@@ -289,5 +294,6 @@ if __name__ == "__main__":
 		alfred_query(query, category)
 	else:
 		#log = "lets test this guy %(3/5/2013 15:15)"
-		add_new_calendar('name', 'description', '2013-05-01 19:00', '2013-05-01 19:30', 1, 0, 1, 0, 1, 0, 0, '2013-05-25')
-
+		#add_new_calendar('name', 'description', '2013-05-01 19:00', '2013-05-01 19:30', 1, 0, 1, 0, 1, 0, 0, '2013-05-25')
+		#replace_string('~Majesh', '~Mahesh')
+		pass
