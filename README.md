@@ -1,3 +1,5 @@
+### a new version of this can be found [here](https://github.com/genekogan/Logger)
+
 # Logger
 
 [Logger](http://genekogan.com/writing/intro-to-logger.html) is a mostly personal project to create a quick and simple dashboard to log notes, ideas, commentary, and todo lists into an electronic journal to keep an ongoing record of my own personal activities. Entries are placed into a database along with a timestamp and geolocation (when connected to internet), with various twitter-style reserved characters used to track entities over time. There is also functionality for making simple, locally-served to-do lists.
